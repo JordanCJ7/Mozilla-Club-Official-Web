@@ -3,6 +3,8 @@ import { useState, useRef, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 
+import { useGoogleReCaptcha } from "@google-recaptcha/react"
+
 interface FieldErrors {
   fullName?: string
   email?: string
@@ -21,6 +23,7 @@ interface FieldErrors {
 const preferredTeamOptions = ["Dev", "Design", "Editorial", "TV", "Other"] as const
 
 export default function JoinUsPage() {
+  const { executeV3 } = useGoogleReCaptcha()
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [studentId, setStudentId] = useState("")
@@ -56,8 +59,8 @@ export default function JoinUsPage() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) nextErrors.email = "Invalid email"
 
     if (!studentId.trim()) nextErrors.studentId = "Student ID is required"
-    else if (!/^(IT|EN|BS|HS)\d{8}$/i.test(studentId.trim()))
-      nextErrors.studentId = "Format: IT|EN|BS|HS followed by 8 digits"
+    else if (!/^IT\d{8}$/i.test(studentId.trim()))
+      nextErrors.studentId = "Format: IT followed by 8 digits"
     if (!academicYear) nextErrors.academicYear = "Select academic year"
     if (!semester) nextErrors.semester = "Select semester"
     if (!specialization) nextErrors.specialization = "Select specialization"
@@ -135,6 +138,15 @@ export default function JoinUsPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     // Touch all fields to show inline errors
+    if (!executeV3) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("reCAPTCHA not ready. Please reload and try again.")
+      }
+      return
+    }
+
+    const token = await executeV3("join_us_submit")
+
     ;[
       "fullName",
       "email",
@@ -174,6 +186,11 @@ export default function JoinUsPage() {
       reason: reason.trim(),
       otherClubs: otherClubs.trim() || "None",
       preferredTeam: preferredTeams.join(", "),
+      token,
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("reCAPTCHA token:", token)
     }
 
     try {
@@ -220,7 +237,7 @@ export default function JoinUsPage() {
       if (backendMsg.includes("Invalid GitHub URL"))
         newFieldErrors.github = "Enter a valid GitHub profile URL"
       if (backendMsg.includes("Invalid student ID"))
-        newFieldErrors.studentId = "Format: IT|EN|BS|HS followed by 8 digits"
+        newFieldErrors.studentId = "Format: IT followed by 8 digits"
       if (backendMsg.includes("Invalid email")) newFieldErrors.email = "Invalid email"
       if (backendMsg.includes("Full name required"))
         newFieldErrors.fullName = "Full name is required"
@@ -256,7 +273,7 @@ export default function JoinUsPage() {
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader>
             <CardTitle className="text-center text-orange-600">
-              Registration Form - Mozilla Campus Club of SLIIT
+              Application Form - Mozilla Campus Club of SLIIT
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -264,12 +281,24 @@ export default function JoinUsPage() {
               Thank you for your interest in joining Mozilla Campus Club of SLIIT. Please use the
               following link to join our WhatsApp group.
             </p>
-            <p className="text-center mb-6">
+            <p className="text-center mb-6 flex items-center justify-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 32 32"
+                fill="currentColor"
+                style={{ color: "#25D366" }}
+                aria-label="WhatsApp"
+              >
+                <path d="M16 3C9.373 3 4 8.373 4 15c0 2.647.832 5.13 2.406 7.244L4 29l7.012-2.293C13.03 27.57 14.497 28 16 28c6.627 0 12-5.373 12-12S22.627 3 16 3zm0 22c-1.37 0-2.71-.27-3.97-.8l-.28-.12-4.16 1.36 1.36-4.05-.18-.29C7.27 19.71 7 18.37 7 17c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9zm5.13-6.47c-.28-.14-1.65-.81-1.9-.9-.25-.09-.43-.14-.61.14-.18.28-.7.9-.86 1.08-.16.18-.32.2-.6.07-.28-.14-1.18-.44-2.25-1.4-.83-.74-1.39-1.65-1.55-1.93-.16-.28-.02-.43.12-.57.13-.13.28-.34.42-.51.14-.17.18-.29.28-.48.09-.18.05-.36-.02-.5-.07-.14-.61-1.47-.84-2.01-.22-.53-.45-.46-.61-.47-.16-.01-.35-.01-.54-.01-.19 0-.5.07-.76.36-.26.29-1 1-.97 2.43.03 1.43 1.04 2.81 1.19 3 .15.19 2.05 3.14 5.01 4.28.7.24 1.25.38 1.68.49.71.18 1.36.15 1.87.09.57-.07 1.65-.67 1.89-1.32.23-.65.23-1.21.16-1.32-.07-.11-.25-.18-.53-.32z" />
+              </svg>
               <a
                 href="https://chat.whatsapp.com/ClX4r9OY6R61ss00tRkNNS"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline font-medium break-all hover:text-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+                className="font-medium break-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+                style={{ textDecoration: "none", color: "#0000FF" }}
               >
                 Join WhatsApp Group
               </a>
@@ -355,9 +384,12 @@ export default function JoinUsPage() {
             value={studentId}
             onChange={(e) => {
               let v = e.target.value.toUpperCase()
-              if (v.length > 10) v = v.slice(0, 10)
-              if (v.length <= 2) v = v.replace(/[^A-Z]/g, "")
-              else v = v.slice(0, 2).replace(/[^A-Z]/g, "") + v.slice(2).replace(/[^0-9]/g, "")
+              v = v.slice(0, 10)
+              if (v.length <= 2) {
+                v = v.replace(/[^IT]/g, "")
+              } else {
+                v = "IT" + v.slice(2).replace(/[^0-9]/g, "")
+              }
               setStudentId(v)
             }}
             maxLength={10}

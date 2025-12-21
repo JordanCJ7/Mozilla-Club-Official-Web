@@ -1,10 +1,18 @@
 import Link from "next/link"
-import { Facebook, Twitter, Instagram, Github, Linkedin, Youtube } from "lucide-react"
+import {
+  Facebook,
+  Twitter,
+  Instagram,
+  Github,
+  Linkedin,
+  Youtube,
+  MessageCircle,
+} from "lucide-react"
 
 export function Footer() {
   return (
     <footer className="bg-gray-100 py-12">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-6 md:px-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <img src="/assets/Mozilla-logo.png" alt="Mozilla Logo" className="h-8 w-auto mb-2" />
@@ -16,7 +24,7 @@ export function Footer() {
             </p>
           </div>
 
-          <div>
+          <div className="md:pl-4">
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <div className="flex flex-col space-y-2">
               <Link href="/" className="text-sm hover:text-primary">
@@ -37,17 +45,25 @@ export function Footer() {
             </div>
           </div>
 
-          <div>
+          <div className="md:pl-4">
             <h4 className="font-semibold mb-4">Contact</h4>
             <div className="text-sm space-y-2">
               <p>SLIIT Malabe Campus</p>
               <p>New Kandy Road</p>
               <p>Malabe, Sri Lanka</p>
-              <p>Email: infosliitmcc@gmail.com</p>
+              <p>
+                Email:{" "}
+                <a
+                  href="mailto:infosliitmcc@gmail.com"
+                  className="hover:text-primary hover:underline transition-colors"
+                >
+                  infosliitmcc@gmail.com
+                </a>
+              </p>
             </div>
           </div>
 
-          <div>
+          <div className="flex flex-col">
             <h4 className="font-semibold mb-4">Follow Us on Socials!</h4>
             <div className="flex space-x-4">
               <Link href="https://www.facebook.com/sliitmozilla" className="hover:text-primary">
@@ -73,6 +89,21 @@ export function Footer() {
                 className="hover:text-primary"
               >
                 <Linkedin className="h-5 w-5" />
+              </Link>
+              <Link
+                href="https://discord.gg/EqEUDnmkDZ"
+                className="hover:text-primary block lg:hidden"
+              >
+                <MessageCircle className="w-5 h-5" />
+              </Link>
+            </div>
+            <div className="mt-6 hidden lg:block">
+              <Link
+                href="https://discord.gg/EqEUDnmkDZ"
+                target="_blank"
+                className="text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded transition-colors"
+              >
+                Join Us on Discord
               </Link>
             </div>
           </div>
